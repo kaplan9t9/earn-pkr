@@ -24,7 +24,6 @@
         table { width: 100%; border-collapse: collapse; }
         th { background: #f1f5f9; font-weight: 600; padding: 14px 12px; }
         td { padding: 12px; border-bottom: 1px solid #e9edf2; }
-        .badge-plan { padding: 4px 14px; border-radius: 40px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.3px; }
         .input-clean { border: 1px solid #dbe0e6; border-radius: 20px; padding: 14px 20px; width: 100%; transition: 0.2s; }
         .input-clean:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
         .btn-admin-nav { transition: 0.2s; border-radius: 12px; padding: 12px 18px; font-weight: 500; }
@@ -33,6 +32,13 @@
         .modal-backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
         .spinner { border: 3px solid #f3f3f3; border-top: 3px solid #2563eb; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @media (max-width: 768px) {
+            .admin-sidebar { width: 100%; height: auto; flex-direction: row; flex-wrap: wrap; padding: 10px; }
+            .admin-sidebar nav { display: flex; flex-wrap: wrap; gap: 5px; }
+            .admin-sidebar nav button { padding: 8px 12px; font-size: 12px; }
+            .stats-grid { grid-template-columns: 1fr !important; }
+        }
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
     </style>
 </head>
 <body>
@@ -49,11 +55,8 @@
             <button @click="showAdminLoginModal = true" class="mt-2 text-xs bg-gray-800/10 hover:bg-gray-800/20 px-5 py-2 rounded-full transition-all font-medium text-gray-700"><i class="fas fa-user-shield mr-1"></i> Admin</button>
         </div>
 
-        <!-- LOADING -->
-        <div v-if="loading" class="text-center py-20"><div class="spinner mx-auto"></div><p class="mt-4 text-gray-500">Loading...</p></div>
-
         <!-- LOGIN / SIGNUP -->
-        <div v-else-if="!isLoggedIn" class="max-w-md mx-auto bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl p-8 border border-white/40">
+        <div v-if="!isLoggedIn" class="max-w-md mx-auto bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl p-8 border border-white/40">
             <div class="flex justify-center mb-4">
                 <div class="w-20 h-20 bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-full flex items-center justify-center shadow-lg"><i class="fas fa-rupee-sign text-4xl text-white"></i></div>
             </div>
@@ -95,17 +98,27 @@
                 </div>
             </div>
 
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="glass-card rounded-2xl p-4 text-center">
+                    <p class="text-gray-500 text-sm">Today's Ads</p>
+                    <p class="text-2xl font-bold text-gray-800">{{ userDailyAdsWatched }} / 20</p>
+                </div>
+                <div class="glass-card rounded-2xl p-4 text-center">
+                    <p class="text-gray-500 text-sm">Per Ad Rate</p>
+                    <p class="text-2xl font-bold text-emerald-600">₨{{ currentPerAdRate }}</p>
+                </div>
+                <div class="glass-card rounded-2xl p-4 text-center">
+                    <p class="text-gray-500 text-sm">Total Earned</p>
+                    <p class="text-2xl font-bold text-blue-600">₨{{ formatNumber(userTotalEarned) }}</p>
+                </div>
+            </div>
+
             <!-- Watch Ads -->
             <div class="glass-card rounded-3xl shadow-soft p-6">
                 <div class="flex items-center gap-3 border-b border-gray-200/60 pb-4 mb-5">
                     <i class="fas fa-play-circle text-3xl text-amber-500"></i>
                     <h2 class="text-2xl font-bold text-gray-800">Watch & Earn</h2>
-                </div>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 bg-amber-50/70 rounded-2xl p-4 mb-5 border border-amber-200/60">
-                    <span class="font-medium text-sm"><i class="fas fa-chart-line text-amber-600"></i> Today: <strong class="text-lg">{{ userDailyAdsWatched }}</strong>/20</span>
-                    <span class="font-medium text-sm"><i class="fas fa-coins text-amber-600"></i> Per ad: <strong class="text-emerald-600 text-lg">₨{{ currentPerAdRate }}</strong></span>
-                    <span class="font-medium text-sm"><i class="fas fa-tag text-amber-600"></i> Plan: <strong class="text-blue-600">{{ userActivePlan ? userActivePlan.name : 'None' }}</strong></span>
-                    <span class="font-medium text-sm"><i class="fas fa-hourglass-half text-amber-600"></i> Left: <strong>{{ 20 - userDailyAdsWatched }}</strong></span>
                 </div>
                 <button @click="watchAd" :disabled="!canWatchAd" class="btn-warning w-full text-white py-5 rounded-2xl font-bold text-xl disabled:opacity-50 disabled:cursor-not-allowed shadow-xl flex items-center justify-center gap-3 transition hover:scale-[1.01]">
                     <i class="fas fa-tv text-2xl"></i> {{ watchButtonText }}
@@ -212,8 +225,8 @@
             <!-- Pending -->
             <div v-if="adminActiveTab==='subscriptions'" class="bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg p-6">
                 <h2 class="text-xl font-bold mb-4">⏳ Pending Activations</h2>
-                <div v-if="adminPendingDeposits.length===0" class="text-center py-10 text-gray-400">No pending requests.</div>
-                <div v-for="req in adminPendingDeposits" :key="req.requestId" class="border-b py-4 flex justify-between items-center flex-wrap gap-3">
+                <div v-if="pendingDeposits.length===0" class="text-center py-10 text-gray-400">No pending requests.</div>
+                <div v-for="req in pendingDeposits" :key="req.requestId" class="border-b py-4 flex justify-between items-center flex-wrap gap-3">
                     <div><p class="font-bold text-lg">{{ req.userData?.fullName || 'Unknown' }}</p><p class="text-sm">{{ req.userData?.mobile || '' }} • <span class="font-mono font-bold">{{ req.selectedPlan }}</span> • ₨{{ req.amount }}</p><p class="text-xs text-gray-400">{{ formatDate(req.createdAt) }}</p></div>
                     <button @click="adminConfirmPlan(req.userId, req.selectedPlan)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-2xl font-bold shadow transition">✅ Activate + Bonus</button>
                 </div>
@@ -223,11 +236,11 @@
             <div v-if="adminActiveTab==='plan500'" class="bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg p-6"><h2 class="text-xl font-bold text-blue-700 mb-4">₨500 Plan</h2><div class="table-wrap"><table><thead><tr><th>User</th><th>Mobile</th><th>Balance</th><th>Ads Today</th></tr></thead><tbody><tr v-for="u in usersByPlan('plan500')" :key="u.id"><td>{{ u.fullName }}</td><td>{{ u.mobile }}</td><td>₨{{ u.balance }}</td><td>{{ u.adsWatchedToday||0 }}/20</td></tr><tr v-if="usersByPlan('plan500').length===0"><td colspan="4" class="text-center text-gray-400">No users</td></tr></tbody></table></div></div>
             <div v-if="adminActiveTab==='plan1000'" class="bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg p-6"><h2 class="text-xl font-bold text-purple-700 mb-4">₨1000 Plan</h2><div class="table-wrap"><table><thead><tr><th>User</th><th>Mobile</th><th>Balance</th><th>Ads Today</th></tr></thead><tbody><tr v-for="u in usersByPlan('plan1000')" :key="u.id"><td>{{ u.fullName }}</td><td>{{ u.mobile }}</td><td>₨{{ u.balance }}</td><td>{{ u.adsWatchedToday||0 }}/20</td></tr><tr v-if="usersByPlan('plan1000').length===0"><td colspan="4" class="text-center text-gray-400">No users</td></tr></tbody></table></div></div>
             <!-- All users -->
-            <div v-if="adminActiveTab==='allusers'" class="bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg p-6"><h2 class="text-xl font-bold mb-4">All Users</h2><div class="table-wrap"><table><thead><tr><th>Name</th><th>Mobile</th><th>Plan</th><th>Balance</th><th>Status</th></tr></thead><tbody><tr v-for="u in allUsersList" :key="u.id"><td>{{ u.fullName }}</td><td>{{ u.mobile }}</td><td>{{ u.activePlanName||'None' }}</td><td>₨{{ u.balance }}</td><td>{{ u.subscriptionActive?'✅ Active':'Inactive' }}</td></tr><tr v-if="allUsersList.length===0"><td colspan="5" class="text-center text-gray-400">No users</td></tr></tbody></table></div></div>
+            <div v-if="adminActiveTab==='allusers'" class="bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg p-6"><h2 class="text-xl font-bold mb-4">All Users</h2><div class="table-wrap"><table><thead><tr><th>Name</th><th>Mobile</th><th>Plan</th><th>Balance</th><th>Status</th></tr></thead><tbody><tr v-for="u in allUsers" :key="u.id"><td>{{ u.fullName }}</td><td>{{ u.mobile }}</td><td>{{ u.activePlanName||'None' }}</td><td>₨{{ u.balance }}</td><td>{{ u.subscriptionActive?'✅ Active':'Inactive' }}</td></tr><tr v-if="allUsers.length===0"><td colspan="5" class="text-center text-gray-400">No users</td></tr></tbody></table></div></div>
             <!-- Passwords -->
-            <div v-if="adminActiveTab==='passwords'" class="bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg p-6"><h2 class="text-xl font-bold mb-4"><i class="fas fa-key text-amber-600"></i> Credentials</h2><div class="bg-amber-50 border-l-4 border-amber-500 p-3 mb-4 text-sm">🔐 Admin only</div><div class="table-wrap"><table><thead class="bg-gray-800 text-white"><tr><th>#</th><th>Name</th><th>Mobile</th><th>Password</th><th>Plan</th><th>Balance</th></tr></thead><tbody><tr v-for="(u,i) in allUsersList" :key="u.id"><td>{{ i+1 }}</td><td>{{ u.fullName }}</td><td>{{ u.mobile }}</td><td><code class="bg-gray-100 px-2 py-1 rounded">{{ u.password }}</code></td><td>{{ u.activePlanName||'No Plan' }}</td><td>₨{{ u.balance }}</td></tr></tbody></table></div></div>
+            <div v-if="adminActiveTab==='passwords'" class="bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg p-6"><h2 class="text-xl font-bold mb-4"><i class="fas fa-key text-amber-600"></i> Credentials</h2><div class="bg-amber-50 border-l-4 border-amber-500 p-3 mb-4 text-sm">🔐 Admin only</div><div class="table-wrap"><table><thead class="bg-gray-800 text-white"><tr><th>#</th><th>Name</th><th>Mobile</th><th>Password</th><th>Plan</th><th>Balance</th></tr></thead><tbody><tr v-for="(u,i) in allUsers" :key="u.id"><td>{{ i+1 }}</td><td>{{ u.fullName }}</td><td>{{ u.mobile }}</td><td><code class="bg-gray-100 px-2 py-1 rounded">{{ u.password }}</code></td><td>{{ u.activePlanName||'No Plan' }}</td><td>₨{{ u.balance }}</td></tr></tbody></table></div></div>
             <!-- Withdrawals -->
-            <div v-if="adminActiveTab==='withdrawals'" class="bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg p-6"><h2 class="text-xl font-bold mb-4">Withdrawal Requests</h2><div v-for="wd in adminWithdrawals" :key="wd.id" class="border-b py-3 flex justify-between items-center"><div><p><b>{{ wd.fullName }}</b> ({{ wd.mobile }})<br>{{ wd.method }} • {{ wd.account }}<br>₨{{ wd.amount }}</p></div><button @click="markWithdrawComplete(wd.id)" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-2xl font-bold">✅ Processed</button></div><div v-if="adminWithdrawals.length===0" class="text-center py-10 text-gray-400">No pending withdrawals</div></div>
+            <div v-if="adminActiveTab==='withdrawals'" class="bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg p-6"><h2 class="text-xl font-bold mb-4">Withdrawal Requests</h2><div v-for="wd in withdrawalRequests" :key="wd.id" class="border-b py-3 flex justify-between items-center"><div><p><b>{{ wd.fullName }}</b> ({{ wd.mobile }})<br>{{ wd.method }} • {{ wd.account }}<br>₨{{ wd.amount }}</p></div><button @click="markWithdrawComplete(wd.id)" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-2xl font-bold">✅ Processed</button></div><div v-if="withdrawalRequests.length===0" class="text-center py-10 text-gray-400">No pending withdrawals</div></div>
         </div>
     </div>
 
@@ -242,12 +255,27 @@
 
 <script src="https://cdn.jsdelivr.net/npm/vue@2.7.14/dist/vue.js"></script>
 <script>
-    // ---------- API CONFIGURATION ----------
-    const API_URL = '/.netlify/functions/api';
+    // ---------- STORAGE KEYS ----------
+    const USERS_KEY = 'earn_pkr_users_v5';
+    const PENDING_KEY = 'earn_pkr_pending_v5';
+    const WITHDRAW_KEY = 'earn_pkr_withdraw_v5';
     const ADMIN_KEY = 'PkAdm!n@2025#Secure';
 
     // helpers
     function isValidPakistaniMobile(m) { return /^03[0-9]{9}$/.test(m); }
+    function getUsers() { return JSON.parse(localStorage.getItem(USERS_KEY) || '[]'); }
+    function saveUsers(u) { localStorage.setItem(USERS_KEY, JSON.stringify(u)); }
+    function getPending() { return JSON.parse(localStorage.getItem(PENDING_KEY) || '[]'); }
+    function savePending(p) { localStorage.setItem(PENDING_KEY, JSON.stringify(p)); }
+    function getWithdrawals() { return JSON.parse(localStorage.getItem(WITHDRAW_KEY) || '[]'); }
+    function saveWithdrawals(w) { localStorage.setItem(WITHDRAW_KEY, JSON.stringify(w)); }
+
+    // Seed default users if empty
+    if (getUsers().length === 0) {
+        saveUsers([
+            { id: 'seed_' + Date.now(), fullName: 'Test User', mobile: '03001234567', password: '123456', balance: 0, subscriptionActive: false, activePlan: null, activePlanName: null, adsWatchedToday: 0, lastAdDate: null, transactions: [], isAdmin: true }
+        ]);
+    }
 
     Vue.config.productionTip = false;
     new Vue({
@@ -273,13 +301,16 @@
             withdrawAmount: 300,
             toast: { message: '', type: '' },
             pendingDepositsRaw: [],
+            withdrawalRequestsRaw: [],
             loading: false,
-            adCooldown: 0,
-            authToken: localStorage.getItem('token') || null,
-            allUsers: []
+            adCooldown: 0
         },
         computed: {
             userBalance() { return this.currentUser ? this.currentUser.balance : 0; },
+            userTotalEarned() { 
+                if(!this.currentUser) return 0;
+                return this.currentUser.transactions?.filter(t => t.amount > 0).reduce((sum, t) => sum + t.amount, 0) || 0;
+            },
             userActivePlan() { return this.currentUser?.activePlan || null; },
             currentPerAdRate() { return this.userActivePlan ? this.userActivePlan.perAd : 0; },
             userDailyAdsWatched() {
@@ -295,11 +326,11 @@
                 return `📺 Watch Ad +₨${this.currentPerAdRate}`;
             },
             recentTransactions() { return this.currentUser?.transactions ? [...this.currentUser.transactions].reverse().slice(0,10) : []; },
-            adminPendingDeposits() {
-                return this.pendingDepositsRaw.filter(p => p.status === 'pending').map(req => ({ ...req, userData: this.allUsers.find(u => u.id === req.userId) }));
+            pendingDeposits() {
+                return this.pendingDepositsRaw.filter(p => p.status === 'pending').map(req => ({ ...req, userData: getUsers().find(u => u.id === req.userId) }));
             },
-            adminWithdrawals() { return []; }, // Will be fetched from API
-            allUsersList() { return this.allUsers; },
+            withdrawalRequests() { return this.withdrawalRequestsRaw.filter(w => w.status === 'pending'); },
+            allUsers() { return getUsers(); },
             selectedPlanName() {
                 if(this.selectedPlanType === 'plan300') return '₨300 Plan';
                 if(this.selectedPlanType === 'plan500') return '₨500 Plan';
@@ -318,99 +349,56 @@
             showToast(msg, type) { this.toast = { message: msg, type: type }; setTimeout(() => { this.toast.message = ''; }, 3500); },
             isValidPakistaniMobile,
 
-            async signupUser() {
-                if(!this.signupFullName || !isValidPakistaniMobile(this.signupMobile) || !this.signupPassword || this.signupPassword.length < 6) {
-                    return this.showToast('Invalid fields', 'error');
-                }
-                this.loading = true;
-                try {
-                    const res = await fetch(`${API_URL}/auth/signup`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ fullName: this.signupFullName, mobile: this.signupMobile, password: this.signupPassword })
-                    });
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.error);
-                    this.authToken = data.token;
-                    localStorage.setItem('token', this.authToken);
-                    this.currentUser = data.user;
-                    this.isLoggedIn = true;
-                    this.showToast(`Welcome ${this.signupFullName}!`, 'success');
-                    this.signupFullName = this.signupMobile = this.signupPassword = '';
-                } catch (err) {
-                    this.showToast(err.message, 'error');
-                }
-                this.loading = false;
-            },
-
-            async loginUser() {
-                if(!this.loginMobile || !this.loginPassword) {
-                    return this.showToast('Please fill all fields', 'error');
-                }
-                this.loading = true;
-                try {
-                    const res = await fetch(`${API_URL}/auth/login`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ mobile: this.loginMobile, password: this.loginPassword })
-                    });
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.error);
-                    this.authToken = data.token;
-                    localStorage.setItem('token', this.authToken);
-                    this.currentUser = data.user;
-                    this.isLoggedIn = true;
-                    this.showToast(`Welcome back ${data.user.fullName}!`, 'success');
-                    this.loginMobile = this.loginPassword = '';
-                } catch (err) {
-                    this.showToast(err.message, 'error');
-                }
-                this.loading = false;
-            },
-
-            async fetchUserData() {
-                if (!this.authToken) return;
-                try {
-                    const res = await fetch(`${API_URL}/user/me`, {
-                        headers: { 'Authorization': `Bearer ${this.authToken}` }
-                    });
-                    if (!res.ok) throw new Error('Session expired');
-                    const data = await res.json();
-                    this.currentUser = data;
-                } catch (err) {
-                    this.logoutUser();
-                }
-            },
-
             logoutUser() {
                 this.isLoggedIn = false;
                 this.currentUser = null;
-                this.authToken = null;
-                localStorage.removeItem('token');
                 this.showToast('Logged out', 'info');
             },
 
-            async watchAd() {
-                if(!this.canWatchAd) return this.showToast('Cannot watch ad', 'error');
-                this.loading = true;
-                try {
-                    const res = await fetch(`${API_URL}/user/watch`, {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${this.authToken}` }
-                    });
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.error);
-                    this.currentUser = data.user;
-                    this.showToast(`🎉 Earned ₨${data.earned}!`, 'success');
-                    this.adCooldown = 3600;
-                    const timer = setInterval(() => {
-                        this.adCooldown -= 1;
-                        if (this.adCooldown <= 0) { clearInterval(timer); this.adCooldown = 0; }
-                    }, 1000);
-                } catch (err) {
-                    this.showToast(err.message, 'error');
+            signupUser() {
+                if(!this.signupFullName || !isValidPakistaniMobile(this.signupMobile) || !this.signupPassword || this.signupPassword.length < 6) {
+                    return this.showToast('Invalid fields', 'error');
                 }
-                this.loading = false;
+                let users = getUsers();
+                if(users.find(u => u.mobile === this.signupMobile)) {
+                    return this.showToast('Mobile already registered', 'error');
+                }
+                let newUser = {
+                    id: Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+                    fullName: this.signupFullName,
+                    mobile: this.signupMobile,
+                    password: this.signupPassword,
+                    balance: 0,
+                    subscriptionActive: false,
+                    activePlan: null,
+                    activePlanName: null,
+                    adsWatchedToday: 0,
+                    lastAdDate: null,
+                    transactions: [],
+                    isAdmin: false
+                };
+                users.push(newUser);
+                saveUsers(users);
+                this.currentUser = newUser;
+                this.isLoggedIn = true;
+                this.showToast(`Welcome ${this.signupFullName}!`, 'success');
+                this.signupFullName = this.signupMobile = this.signupPassword = '';
+            },
+
+            loginUser() {
+                let user = getUsers().find(u => u.mobile === this.loginMobile && u.password === this.loginPassword);
+                if(!user) return this.showToast('Invalid credentials', 'error');
+                this.currentUser = user;
+                this.isLoggedIn = true;
+                this.showToast(`Welcome back ${user.fullName}!`, 'success');
+                this.loginMobile = this.loginPassword = '';
+            },
+
+            updateUserStorage() {
+                let users = getUsers();
+                let idx = users.findIndex(u => u.id === this.currentUser.id);
+                if(idx !== -1) users[idx] = this.currentUser;
+                saveUsers(users);
             },
 
             openDepositModal() {
@@ -424,117 +412,144 @@
                 this.showPaymentDetails = true;
             },
 
-            async submitPlanDeposit() {
+            submitPlanDeposit() {
                 if(!this.selectedPlanType) return;
-                this.loading = true;
-                try {
-                    const res = await fetch(`${API_URL}/deposit/request`, {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${this.authToken}`, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ plan: this.selectedPlanType })
-                    });
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.error);
-                    this.showPaymentDetails = false;
-                    this.showToast('Deposit request sent! Admin will activate.', 'success');
-                } catch (err) {
-                    this.showToast(err.message, 'error');
+                let pending = getPending();
+                if(pending.find(p => p.userId === this.currentUser.id && p.status === 'pending')) {
+                    return this.showToast('Pending request already exists', 'error');
                 }
-                this.loading = false;
+                pending.push({
+                    requestId: Date.now(),
+                    userId: this.currentUser.id,
+                    selectedPlan: this.selectedPlanType,
+                    amount: this.selectedPlanAmount,
+                    status: 'pending',
+                    createdAt: new Date().toISOString()
+                });
+                savePending(pending);
+                this.pendingDepositsRaw = pending;
+                this.showPaymentDetails = false;
+                this.showToast('Deposit request sent! Admin will activate.', 'success');
             },
 
-            async requestWithdraw() {
+            watchAd() {
+                if(!this.canWatchAd) return this.showToast('Cannot watch ad', 'error');
+                let today = new Date().toDateString();
+                if(this.currentUser.lastAdDate !== today) {
+                    this.currentUser.adsWatchedToday = 0;
+                    this.currentUser.lastAdDate = today;
+                }
+                if(this.currentUser.adsWatchedToday >= 20) return;
+                let earn = this.currentUser.activePlan.perAd;
+                this.currentUser.balance += earn;
+                this.currentUser.adsWatchedToday += 1;
+                this.currentUser.transactions.push({
+                    id: Date.now(),
+                    description: `📺 Ad (${this.currentUser.adsWatchedToday}/20) +₨${earn}`,
+                    amount: earn,
+                    date: new Date()
+                });
+                this.updateUserStorage();
+                this.showToast(`🎉 Earned ₨${earn}!`, 'success');
+                this.adCooldown = 3600;
+                const timer = setInterval(() => {
+                    this.adCooldown -= 1;
+                    if (this.adCooldown <= 0) { clearInterval(timer); this.adCooldown = 0; }
+                }, 1000);
+            },
+
+            openWithdrawModal() {
+                if(this.userBalance < 300) return this.showToast('Minimum withdrawal ₨300', 'error');
+                this.withdrawAmount = Math.min(this.userBalance, 500);
+                this.showWithdrawModal = true;
+            },
+
+            requestWithdraw() {
                 let amt = parseFloat(this.withdrawAmount);
                 if(amt < 300 || amt > this.userBalance || !this.withdrawAccount) {
                     return this.showToast('Invalid withdrawal', 'error');
                 }
-                this.loading = true;
-                try {
-                    const res = await fetch(`${API_URL}/withdraw/request`, {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${this.authToken}`, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ method: this.withdrawMethod, account: this.withdrawAccount, amount: amt })
-                    });
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.error);
-                    this.showWithdrawModal = false;
-                    this.showToast(`Withdrawal of ₨${amt} submitted`, 'success');
-                    await this.fetchUserData();
-                } catch (err) {
-                    this.showToast(err.message, 'error');
-                }
-                this.loading = false;
+                this.currentUser.balance -= amt;
+                this.currentUser.transactions.push({
+                    id: Date.now(),
+                    description: `💰 Withdrawal ₨${amt} via ${this.withdrawMethod}`,
+                    amount: -amt,
+                    date: new Date()
+                });
+                let wReqs = getWithdrawals();
+                wReqs.push({
+                    id: Date.now(),
+                    userId: this.currentUser.id,
+                    fullName: this.currentUser.fullName,
+                    mobile: this.currentUser.mobile,
+                    method: this.withdrawMethod,
+                    account: this.withdrawAccount,
+                    amount: amt,
+                    status: 'pending',
+                    date: new Date()
+                });
+                saveWithdrawals(wReqs);
+                this.withdrawalRequestsRaw = wReqs;
+                this.updateUserStorage();
+                this.showWithdrawModal = false;
+                this.showToast(`Withdrawal of ₨${amt} submitted`, 'success');
             },
 
             // Admin methods
-            async loadAdminData() {
-                if (!this.authToken) return;
-                try {
-                    const res = await fetch(`${API_URL}/admin/users`, {
-                        headers: { 'Authorization': `Bearer ${this.authToken}` }
-                    });
-                    if (res.ok) {
-                        this.allUsers = await res.json();
-                    }
-                    const pendingRes = await fetch(`${API_URL}/admin/pending`, {
-                        headers: { 'Authorization': `Bearer ${this.authToken}` }
-                    });
-                    if (pendingRes.ok) {
-                        this.pendingDepositsRaw = await pendingRes.json();
-                    }
-                } catch (err) {
-                    console.error(err);
+            adminConfirmPlan(userId, planKey) {
+                let pendingList = getPending();
+                let idx = pendingList.findIndex(p => p.userId === userId && p.selectedPlan === planKey && p.status === 'pending');
+                if(idx === -1) return;
+                let users = getUsers();
+                let user = users.find(u => u.id === userId);
+                if(!user) return;
+                const bonusMap = {
+                    plan300: { bonus: 200, totalAdd: 500, perAd: 5, name: '₨300 Plan' },
+                    plan500: { bonus: 500, totalAdd: 1000, perAd: 10, name: '₨500 Plan' },
+                    plan1000: { bonus: 1000, totalAdd: 2000, perAd: 20, name: '₨1000 Plan' }
+                };
+                let selected = bonusMap[planKey];
+                user.balance += selected.totalAdd;
+                user.subscriptionActive = true;
+                user.activePlan = { name: selected.name, perAd: selected.perAd, planId: planKey };
+                user.activePlanName = selected.name;
+                user.transactions.push({
+                    id: Date.now(),
+                    description: `✅ Activated ${selected.name} +₨${selected.totalAdd} bonus`,
+                    amount: selected.totalAdd,
+                    date: new Date()
+                });
+                pendingList.splice(idx, 1);
+                savePending(pendingList);
+                saveUsers(users);
+                this.pendingDepositsRaw = pendingList;
+                if(this.currentUser && this.currentUser.id === userId) {
+                    this.currentUser = user;
                 }
-            },
-
-            async adminConfirmPlan(userId, planKey) {
-                this.loading = true;
-                try {
-                    const res = await fetch(`${API_URL}/admin/activate`, {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${this.authToken}`, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ userId, planKey })
-                    });
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.error);
-                    this.showToast('Plan activated successfully!', 'success');
-                    await this.loadAdminData();
-                    if (this.currentUser && this.currentUser.id === userId) {
-                        await this.fetchUserData();
-                    }
-                } catch (err) {
-                    this.showToast(err.message, 'error');
-                }
-                this.loading = false;
+                this.showToast(`✅ ${selected.name} activated for ${user.fullName}`, 'success');
             },
 
             usersByPlan(planId) {
-                return this.allUsers.filter(u => u.activePlan && u.activePlan.planId === planId && u.subscriptionActive);
+                return getUsers().filter(u => u.activePlan && u.activePlan.planId === planId && u.subscriptionActive);
             },
 
-            async markWithdrawComplete(wid) {
-                this.loading = true;
-                try {
-                    const res = await fetch(`${API_URL}/admin/withdraw/process`, {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${this.authToken}`, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ withdrawalId: wid })
-                    });
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.error);
+            markWithdrawComplete(wid) {
+                let wReqs = getWithdrawals();
+                let i = wReqs.findIndex(w => w.id === wid);
+                if(i !== -1) {
+                    wReqs[i].status = 'completed';
+                    saveWithdrawals(wReqs);
+                    this.withdrawalRequestsRaw = wReqs;
                     this.showToast('Withdrawal processed', 'success');
-                    await this.loadAdminData();
-                } catch (err) {
-                    this.showToast(err.message, 'error');
                 }
-                this.loading = false;
             },
 
             verifyAdminLogin() {
                 if(this.adminLoginPassword === ADMIN_KEY) {
                     this.isAdminMode = true;
                     this.showAdminLoginModal = false;
-                    this.loadAdminData();
+                    this.pendingDepositsRaw = getPending();
+                    this.withdrawalRequestsRaw = getWithdrawals();
                 } else {
                     this.showToast('Invalid admin key', 'error');
                 }
@@ -543,19 +558,24 @@
             logoutAdmin() { this.isAdminMode = false; }
         },
         mounted() {
-            const token = localStorage.getItem('token');
-            if (token) {
-                this.authToken = token;
-                this.fetchUserData().then(() => {
-                    if (this.currentUser) {
-                        this.isLoggedIn = true;
-                    }
-                });
+            this.pendingDepositsRaw = getPending();
+            this.withdrawalRequestsRaw = getWithdrawals();
+            // Check for session
+            let sess = sessionStorage.getItem('earn_session');
+            if(sess) {
+                try {
+                    let { id } = JSON.parse(sess);
+                    let u = getUsers().find(u => u.id === id);
+                    if(u) { this.currentUser = u; this.isLoggedIn = true; }
+                } catch(e) {}
             }
             // Auto-refresh admin data
             setInterval(() => {
-                if (this.isAdminMode) this.loadAdminData();
-            }, 10000);
+                if(this.isAdminMode) {
+                    this.pendingDepositsRaw = getPending();
+                    this.withdrawalRequestsRaw = getWithdrawals();
+                }
+            }, 5000);
         }
     });
 </script>

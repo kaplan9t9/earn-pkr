@@ -1,9 +1,0 @@
-{
-  "name": "earn-pkr-platform",
-  "version": "1.0.0",
-  "dependencies": {
-    "bcryptjs": "^2.4.3",
-    "jsonwebtoken": "^9.0.3",
-    "mongodb": "^6.21.0"
-  }
-}

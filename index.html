@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Earn in Rupees PK • Premium Plans</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+        body { background: linear-gradient(145deg, #f2f8ff 0%, #e3edf7 100%); min-height: 100vh; }
+        .glass-card { background: rgba(255,255,255,0.8); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.3); }
+        .shadow-soft { box-shadow: 0 12px 30px rgba(0,0,0,0.05); }
+        .shadow-soft:hover { box-shadow: 0 20px 35px -8px rgba(0,0,0,0.1); }
+        .plan-card { border-left: 6px solid; transition: all 0.2s; }
+        .plan-card:hover { transform: translateY(-4px); }
+        .btn-primary { background: linear-gradient(135deg, #2563eb, #1d4ed8); box-shadow: 0 4px 14px rgba(37,99,235,0.35); }
+        .btn-success { background: linear-gradient(135deg, #059669, #047857); box-shadow: 0 4px 14px rgba(5,150,105,0.35); }
+        .btn-warning { background: linear-gradient(135deg, #d97706, #b45309); box-shadow: 0 4px 14px rgba(217,119,6,0.35); }
+        .btn-danger { background: linear-gradient(135deg, #dc2626, #b91c1c); box-shadow: 0 4px 14px rgba(220,38,38,0.3); }
+        .admin-sidebar { background: linear-gradient(180deg, #0b1120 0%, #172135 100%); }
+        .toast-notify { position: fixed; bottom: 24px; right: 24px; z-index: 999; background: #1e293b; color: white; padding: 14px 28px; border-radius: 60px; font-weight: 600; box-shadow: 0 12px 25px rgba(0,0,0,0.2); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.1); }
+        .table-wrap { overflow-x: auto; border-radius: 16px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #f1f5f9; font-weight: 600; padding: 14px 12px; }
+        td { padding: 12px; border-bottom: 1px solid #e9edf2; }
+        .badge-plan { padding: 4px 14px; border-radius: 40px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.3px; }
+        .input-clean { border: 1px solid #dbe0e6; border-radius: 20px; padding: 14px 20px; width: 100%; transition: 0.2s; }
+        .input-clean:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
+        .btn-admin-nav { transition: 0.2s; border-radius: 12px; padding: 12px 18px; font-weight: 500; }
+        .btn-admin-nav:hover { background: rgba(255,255,255,0.08); }
+        .btn-admin-nav.active { background: rgba(255,255,255,0.15); }
+        .modal-backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
+        .spinner { border: 3px solid #f3f3f3; border-top: 3px solid #2563eb; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+<div id="app">
+    <!-- MAIN USER INTERFACE -->
+    <div v-if="!isAdminMode" class="max-w-5xl mx-auto px-4 py-6 md:py-10">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center gap-3 bg-white/70 backdrop-blur-sm rounded-3xl px-8 py-3 shadow-sm border border-white/50">
+                <i class="fas fa-coins text-3xl text-amber-500"></i>
+                <h1 class="text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-emerald-700 to-emerald-500 bg-clip-text text-transparent">Earn in Rupees PK</h1>
+            </div>
+            <p class="text-gray-600 mt-2 font-medium"><i class="fas fa-map-pin text-red-500"></i> Pakistan's trusted earning platform</p>
+            <button @click="showAdminLoginModal = true" class="mt-2 text-xs bg-gray-800/10 hover:bg-gray-800/20 px-5 py-2 rounded-full transition-all font-medium text-gray-700"><i class="fas fa-user-shield mr-1"></i> Admin</button>
+        </div>
+
+        <!-- LOADING -->
+        <div v-if="loading" class="text-center py-20"><div class="spinner mx-auto"></div><p class="mt-4 text-gray-500">Loading...</p></div>
+
+        <!-- LOGIN / SIGNUP -->
+        <div v-else-if="!isLoggedIn" class="max-w-md mx-auto bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl p-8 border border-white/40">
+            <div class="flex justify-center mb-4">
+                <div class="w-20 h-20 bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-full flex items-center justify-center shadow-lg"><i class="fas fa-rupee-sign text-4xl text-white"></i></div>
+            </div>
+            <div class="flex bg-gray-100/70 rounded-2xl p-1 mb-6">
+                <button @click="authMode='login'" :class="authMode==='login'?'bg-white shadow-md text-emerald-700':'text-gray-600'" class="flex-1 py-2.5 rounded-xl font-bold text-sm transition-all">Login</button>
+                <button @click="authMode='signup'" :class="authMode==='signup'?'bg-white shadow-md text-emerald-700':'text-gray-600'" class="flex-1 py-2.5 rounded-xl font-bold text-sm transition-all">Sign Up</button>
+            </div>
+            <div v-if="authMode==='login'">
+                <div class="relative mb-4"><i class="fas fa-mobile-alt absolute left-5 top-4 text-gray-400"></i><input v-model="loginMobile" placeholder="03xxxxxxxxx" class="input-clean pl-12"></div>
+                <div class="relative mb-5"><i class="fas fa-lock absolute left-5 top-4 text-gray-400"></i><input v-model="loginPassword" type="password" placeholder="Password" class="input-clean pl-12"></div>
+                <button @click="loginUser" class="w-full btn-primary text-white py-3.5 rounded-2xl font-bold text-lg shadow-lg transition hover:scale-[1.02]">Login</button>
+            </div>
+            <div v-else>
+                <input v-model="signupFullName" placeholder="Full Name" class="input-clean mb-3">
+                <div class="relative mb-1"><i class="fas fa-mobile-alt absolute left-5 top-4 text-gray-400"></i><input v-model="signupMobile" placeholder="03001234567" class="input-clean pl-12"></div>
+                <p class="text-xs mt-1 mb-2" :class="isValidPakistaniMobile(signupMobile)?'text-emerald-600':'text-rose-500'">{{ signupMobile ? (isValidPakistaniMobile(signupMobile)?'✅ Valid Pakistani number':'❌ Invalid format') : '' }}</p>
+                <div class="relative mb-4"><i class="fas fa-key absolute left-5 top-4 text-gray-400"></i><input v-model="signupPassword" type="password" placeholder="Password (min 6)" class="input-clean pl-12"></div>
+                <button @click="signupUser" class="w-full btn-success text-white py-3.5 rounded-2xl font-bold text-lg shadow-lg transition hover:scale-[1.02]">Create Account</button>
+            </div>
+        </div>
+
+        <!-- USER DASHBOARD -->
+        <div v-else-if="isLoggedIn && currentUser" class="space-y-6">
+            <!-- Balance + actions -->
+            <div class="glass-card rounded-3xl shadow-soft p-6 md:p-8 flex flex-col md:flex-row justify-between items-center gap-5">
+                <div>
+                    <p class="text-gray-500 text-sm uppercase tracking-wider"><i class="fas fa-wallet mr-1"></i> Your balance</p>
+                    <p class="text-5xl font-black text-gray-800">₨{{ formatNumber(userBalance) }}</p>
+                    <div class="mt-2 flex flex-wrap gap-2">
+                        <span v-if="userActivePlan" class="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 px-4 py-1.5 rounded-full text-xs font-bold"><i class="fas fa-check-circle"></i> {{ userActivePlan.name }} • ₨{{ userActivePlan.perAd }}/ad</span>
+                        <span v-else class="inline-flex items-center gap-1 bg-rose-100 text-rose-700 px-4 py-1.5 rounded-full text-xs font-bold"><i class="fas fa-exclamation-triangle"></i> No active plan</span>
+                        <span class="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs"><i class="fas fa-mobile-alt"></i> {{ currentUser.mobile }}</span>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                    <button @click="openDepositModal" class="btn-primary text-white px-6 py-3.5 rounded-2xl font-bold shadow-lg flex items-center gap-2 transition hover:scale-[1.02]"><i class="fas fa-plus-circle"></i> Deposit</button>
+                    <button @click="openWithdrawModal" class="btn-success text-white px-6 py-3.5 rounded-2xl font-bold shadow-lg flex items-center gap-2 transition hover:scale-[1.02]"><i class="fas fa-hand-holding-usd"></i> Withdraw</button>
+                    <button @click="logoutUser" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-5 py-3.5 rounded-2xl font-bold transition flex items-center gap-2"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                </div>
+            </div>
+
+            <!-- Watch Ads -->
+            <div class="glass-card rounded-3xl shadow-soft p-6">
+                <div class="flex items-center gap-3 border-b border-gray-200/60 pb-4 mb-5">
+                    <i class="fas fa-play-circle text-3xl text-amber-500"></i>
+                    <h2 class="text-2xl font-bold text-gray-800">Watch & Earn</h2>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 bg-amber-50/70 rounded-2xl p-4 mb-5 border border-amber-200/60">
+                    <span class="font-medium text-sm"><i class="fas fa-chart-line text-amber-600"></i> Today: <strong class="text-lg">{{ userDailyAdsWatched }}</strong>/20</span>
+                    <span class="font-medium text-sm"><i class="fas fa-coins text-amber-600"></i> Per ad: <strong class="text-emerald-600 text-lg">₨{{ currentPerAdRate }}</strong></span>
+                    <span class="font-medium text-sm"><i class="fas fa-tag text-amber-600"></i> Plan: <strong class="text-blue-600">{{ userActivePlan ? userActivePlan.name : 'None' }}</strong></span>
+                    <span class="font-medium text-sm"><i class="fas fa-hourglass-half text-amber-600"></i> Left: <strong>{{ 20 - userDailyAdsWatched }}</strong></span>
+                </div>
+                <button @click="watchAd" :disabled="!canWatchAd" class="btn-warning w-full text-white py-5 rounded-2xl font-bold text-xl disabled:opacity-50 disabled:cursor-not-allowed shadow-xl flex items-center justify-center gap-3 transition hover:scale-[1.01]">
+                    <i class="fas fa-tv text-2xl"></i> {{ watchButtonText }}
+                </button>
+                <div v-if="adCooldown > 0" class="text-center mt-3 text-sm text-gray-500">⏳ Next ad available in {{ Math.ceil(adCooldown / 60) }} minutes</div>
+                <p v-if="!userActivePlan" class="text-rose-500 text-sm mt-4 text-center font-medium"><i class="fas fa-info-circle"></i> Choose a plan & deposit. Admin activates manually.</p>
+                <p v-else-if="userDailyAdsWatched >= 20" class="text-amber-600 text-sm mt-4 text-center font-medium"><i class="fas fa-clock"></i> Daily limit reached. Come back tomorrow!</p>
+            </div>
+
+            <!-- Plan showcase -->
+            <div class="glass-card rounded-3xl shadow-soft p-6">
+                <h3 class="font-bold text-2xl mb-5 text-center bg-gradient-to-r from-emerald-600 to-purple-600 bg-clip-text text-transparent"><i class="fas fa-rocket mr-2"></i>Premium Plans</h3>
+                <div class="grid md:grid-cols-3 gap-5">
+                    <div class="plan-card border-l-emerald-500 bg-white/70 backdrop-blur-sm rounded-2xl p-5 shadow-sm hover:shadow-xl transition-all">
+                        <div class="text-3xl font-black text-emerald-700">₨300</div>
+                        <div class="mt-3 space-y-2 text-sm"><p><i class="fas fa-check-circle text-emerald-500"></i> Deposit: ₨300</p><p><i class="fas fa-gift text-amber-500"></i> Bonus: +₨200</p><p><i class="fas fa-tv text-blue-500"></i> 20 ads • ₨5/ad</p><p><i class="fas fa-chart-line text-purple-500"></i> Daily max ₨100</p></div>
+                    </div>
+                    <div class="plan-card border-l-blue-500 bg-white/70 backdrop-blur-sm rounded-2xl p-5 shadow-sm hover:shadow-xl transition-all">
+                        <div class="text-3xl font-black text-blue-700">₨500</div>
+                        <div class="mt-3 space-y-2 text-sm"><p><i class="fas fa-check-circle text-green-500"></i> Deposit: ₨500</p><p><i class="fas fa-gift text-amber-500"></i> Bonus: +₨500</p><p><i class="fas fa-tv text-blue-500"></i> 20 ads • ₨10/ad</p><p><i class="fas fa-chart-line text-purple-500"></i> Daily max ₨200</p></div>
+                    </div>
+                    <div class="plan-card border-l-purple-500 bg-white/70 backdrop-blur-sm rounded-2xl p-5 shadow-sm hover:shadow-xl transition-all">
+                        <div class="text-3xl font-black text-purple-700">₨1000</div>
+                        <div class="mt-3 space-y-2 text-sm"><p><i class="fas fa-check-circle text-green-500"></i> Deposit: ₨1000</p><p><i class="fas fa-gift text-amber-500"></i> Bonus: +₨1000</p><p><i class="fas fa-tv text-blue-500"></i> 20 ads • ₨20/ad</p><p><i class="fas fa-chart-line text-purple-500"></i> Daily max ₨400</p></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transaction history -->
+            <div class="glass-card rounded-3xl shadow-soft p-6">
+                <h3 class="font-bold text-xl mb-4 flex items-center gap-2"><i class="fas fa-history text-gray-500"></i> Recent Activity</h3>
+                <div class="space-y-2 max-h-56 overflow-y-auto pr-1">
+                    <div v-for="tx in recentTransactions" :key="tx.id" class="text-sm border-b border-gray-200/50 py-2.5 flex justify-between items-center">
+                        <span><i class="fas fa-exchange-alt text-gray-400 mr-2"></i> {{ tx.description }}</span>
+                        <span :class="tx.amount>0?'text-emerald-600 font-bold':'text-rose-500 font-bold'" class="font-mono">₨{{ Math.abs(tx.amount) }}</span>
+                    </div>
+                    <div v-if="recentTransactions.length===0" class="text-gray-400 text-center py-5"><i class="fas fa-inbox"></i> No transactions yet.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Deposit Modal -->
+        <div v-if="showDepositModal" class="fixed inset-0 modal-backdrop flex items-center justify-center z-50 p-4" @click.self="showDepositModal=false">
+            <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl">
+                <button @click="showDepositModal=false" class="float-right text-gray-400 hover:text-gray-600 text-xl"><i class="fas fa-times"></i></button>
+                <h3 class="text-2xl font-bold mt-2">Select Plan</h3>
+                <div class="grid gap-3 mt-4">
+                    <div @click="selectPlanAndPay('plan300')" class="border-2 border-emerald-200 rounded-2xl p-4 cursor-pointer hover:bg-emerald-50 transition flex justify-between items-center"><div><span class="font-bold text-xl text-emerald-700">₨300 Plan</span><p class="text-xs text-gray-500">Deposit ₨300 → Get ₨500</p></div><i class="fas fa-arrow-right text-2xl text-emerald-600"></i></div>
+                    <div @click="selectPlanAndPay('plan500')" class="border-2 border-blue-200 rounded-2xl p-4 cursor-pointer hover:bg-blue-50 transition flex justify-between items-center"><div><span class="font-bold text-xl text-blue-700">₨500 Plan</span><p class="text-xs text-gray-500">Deposit ₨500 → Get ₨1000</p></div><i class="fas fa-arrow-right text-2xl text-blue-600"></i></div>
+                    <div @click="selectPlanAndPay('plan1000')" class="border-2 border-purple-200 rounded-2xl p-4 cursor-pointer hover:bg-purple-50 transition flex justify-between items-center"><div><span class="font-bold text-xl text-purple-700">₨1000 Plan</span><p class="text-xs text-gray-500">Deposit ₨1000 → Get ₨2000</p></div><i class="fas fa-arrow-right text-2xl text-purple-600"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Details Modal -->
+        <div v-if="showPaymentDetails" class="fixed inset-0 modal-backdrop flex items-center justify-center z-50 p-4" @click.self="showPaymentDetails=false">
+            <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl">
+                <h3 class="text-2xl font-bold">Deposit {{ selectedPlanName }}</h3>
+                <p class="text-lg text-gray-600 mb-4">Amount: <strong class="text-emerald-600">₨{{ selectedPlanAmount }}</strong></p>
+                <div class="space-y-4">
+                    <div class="bg-gradient-to-r from-emerald-50 to-emerald-100/60 p-4 rounded-2xl border border-emerald-200">
+                        <div class="flex items-center gap-3"><i class="fab fa-easypaisa text-4xl text-emerald-700"></i><div><p class="font-bold text-lg">Easypaisa</p><p class="text-xl font-mono font-bold tracking-wider">03119595969</p><p class="text-sm text-gray-700"><i class="fas fa-user-circle"></i> Hamza Ahmad</p></div></div>
+                    </div>
+                    <div class="bg-gradient-to-r from-blue-50 to-blue-100/60 p-4 rounded-2xl border border-blue-200">
+                        <div class="flex items-center gap-3"><i class="fas fa-mobile-alt text-4xl text-blue-700"></i><div><p class="font-bold text-lg">JazzCash</p><p class="text-xl font-mono font-bold tracking-wider">03119595969</p><p class="text-sm text-gray-700"><i class="fas fa-user-circle"></i> Hamza Ahmad</p></div></div>
+                    </div>
+                </div>
+                <button @click="submitPlanDeposit" class="w-full mt-6 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white py-3.5 rounded-2xl font-bold text-lg shadow-lg transition">✅ I've Paid — Request Activation</button>
+            </div>
+        </div>
+
+        <!-- Withdraw Modal -->
+        <div v-if="showWithdrawModal" class="fixed inset-0 modal-backdrop flex items-center justify-center z-50 p-4" @click.self="showWithdrawModal=false">
+            <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl">
+                <button @click="showWithdrawModal=false" class="float-right text-gray-400 hover:text-gray-600 text-xl"><i class="fas fa-times"></i></button>
+                <h3 class="text-2xl font-bold mb-2">Withdraw PKR</h3>
+                <p class="text-md">Min <strong class="text-rose-600">₨300</strong> • Balance: <strong class="text-emerald-600">₨{{ formatNumber(userBalance) }}</strong></p>
+                <div class="space-y-4 mt-4">
+                    <select v-model="withdrawMethod" class="input-clean"><option value="easypaisa">🏦 Easypaisa</option><option value="jazzcash">💳 JazzCash</option></select>
+                    <input v-model="withdrawAccount" placeholder="Account Number" class="input-clean">
+                    <input v-model.number="withdrawAmount" type="number" placeholder="Amount PKR" class="input-clean">
+                    <button @click="requestWithdraw" class="w-full btn-success text-white py-3.5 rounded-2xl font-bold text-lg shadow-lg transition">Request Withdrawal</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN PANEL -->
+    <div v-if="isAdminMode" class="flex h-screen">
+        <div class="admin-sidebar w-72 text-white p-6 flex flex-col">
+            <h2 class="text-2xl font-bold flex items-center gap-2"><i class="fas fa-user-shield"></i> Admin</h2>
+            <nav class="flex-1 space-y-1 mt-6">
+                <button @click="adminActiveTab='subscriptions'" :class="adminActiveTab==='subscriptions'?'active':''" class="btn-admin-nav w-full text-left flex items-center gap-3"><i class="fas fa-clock"></i> Pending Plans</button>
+                <button @click="adminActiveTab='plan300'" :class="adminActiveTab==='plan300'?'active':''" class="btn-admin-nav w-full text-left flex items-center gap-3"><i class="fas fa-chart-line"></i> ₨300 Plan</button>
+                <button @click="adminActiveTab='plan500'" :class="adminActiveTab==='plan500'?'active':''" class="btn-admin-nav w-full text-left flex items-center gap-3"><i class="fas fa-chart-line"></i> ₨500 Plan</button>
+                <button @click="adminActiveTab='plan1000'" :class="adminActiveTab==='plan1000'?'active':''" class="btn-admin-nav w-full text-left flex items-center gap-3"><i class="fas fa-chart-line"></i> ₨1000 Plan</button>
+                <button @click="adminActiveTab='allusers'" :class="adminActiveTab==='allusers'?'active':''" class="btn-admin-nav w-full text-left flex items-center gap-3"><i class="fas fa-users"></i> All Users</button>
+                <button @click="adminActiveTab='passwords'" :class="adminActiveTab==='passwords'?'active':''" class="btn-admin-nav w-full text-left flex items-center gap-3"><i class="fas fa-key"></i> Credentials</button>
+                <button @click="adminActiveTab='withdrawals'" :class="adminActiveTab==='withdrawals'?'active':''" class="btn-admin-nav w-full text-left flex items-center gap-3"><i class="fas fa-hand-holding-usd"></i> Withdrawals</button>
+            </nav>
+            <button @click="logoutAdmin" class="mt-auto bg-rose-600 hover:bg-rose-700 py-3.5 rounded-2xl font-bold transition">Exit Admin</button>
+        </div>
+        <div class="flex-1 bg-gray-100/70 p-8 overflow-y-auto">
+            <!-- Pending -->
+            <div v-if="adminActiveTab==='subscriptions'" class="bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg p-6">
+                <h2 class="text-xl font-bold mb-4">⏳ Pending Activations</h2>
+                <div v-if="adminPendingDeposits.length===0" class="text-center py-10 text-gray-400">No pending requests.</div>
+                <div v-for="req in adminPendingDeposits" :key="req.requestId" class="border-b py-4 flex justify-between items-center flex-wrap gap-3">
+                    <div><p class="font-bold text-lg">{{ req.userData?.fullName || 'Unknown' }}</p><p class="text-sm">{{ req.userData?.mobile || '' }} • <span class="font-mono font-bold">{{ req.selectedPlan }}</span> • ₨{{ req.amount }}</p><p class="text-xs text-gray-400">{{ formatDate(req.createdAt) }}</p></div>
+                    <button @click="adminConfirmPlan(req.userId, req.selectedPlan)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-2xl font-bold shadow transition">✅ Activate + Bonus</button>
+                </div>
+            </div>
+            <!-- Plan tables -->
+            <div v-if="adminActiveTab==='plan300'" class="bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg p-6"><h2 class="text-xl font-bold text-emerald-700 mb-4">₨300 Plan</h2><div class="table-wrap"><table><thead><tr><th>User</th><th>Mobile</th><th>Balance</th><th>Ads Today</th></tr></thead><tbody><tr v-for="u in usersByPlan('plan300')" :key="u.id"><td>{{ u.fullName }}</td><td>{{ u.mobile }}</td><td>₨{{ u.balance }}</td><td>{{ u.adsWatchedToday||0 }}/20</td></tr><tr v-if="usersByPlan('plan300').length===0"><td colspan="4" class="text-center text-gray-400">No users</td></tr></tbody></table></div></div>
+            <div v-if="adminActiveTab==='plan500'" class="bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg p-6"><h2 class="text-xl font-bold text-blue-700 mb-4">₨500 Plan</h2><div class="table-wrap"><table><thead><tr><th>User</th><th>Mobile</th><th>Balance</th><th>Ads Today</th></tr></thead><tbody><tr v-for="u in usersByPlan('plan500')" :key="u.id"><td>{{ u.fullName }}</td><td>{{ u.mobile }}</td><td>₨{{ u.balance }}</td><td>{{ u.adsWatchedToday||0 }}/20</td></tr><tr v-if="usersByPlan('plan500').length===0"><td colspan="4" class="text-center text-gray-400">No users</td></tr></tbody></table></div></div>
+            <div v-if="adminActiveTab==='plan1000'" class="bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg p-6"><h2 class="text-xl font-bold text-purple-700 mb-4">₨1000 Plan</h2><div class="table-wrap"><table><thead><tr><th>User</th><th>Mobile</th><th>Balance</th><th>Ads Today</th></tr></thead><tbody><tr v-for="u in usersByPlan('plan1000')" :key="u.id"><td>{{ u.fullName }}</td><td>{{ u.mobile }}</td><td>₨{{ u.balance }}</td><td>{{ u.adsWatchedToday||0 }}/20</td></tr><tr v-if="usersByPlan('plan1000').length===0"><td colspan="4" class="text-center text-gray-400">No users</td></tr></tbody></table></div></div>
+            <!-- All users -->
+            <div v-if="adminActiveTab==='allusers'" class="bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg p-6"><h2 class="text-xl font-bold mb-4">All Users</h2><div class="table-wrap"><table><thead><tr><th>Name</th><th>Mobile</th><th>Plan</th><th>Balance</th><th>Status</th></tr></thead><tbody><tr v-for="u in allUsersList" :key="u.id"><td>{{ u.fullName }}</td><td>{{ u.mobile }}</td><td>{{ u.activePlanName||'None' }}</td><td>₨{{ u.balance }}</td><td>{{ u.subscriptionActive?'✅ Active':'Inactive' }}</td></tr><tr v-if="allUsersList.length===0"><td colspan="5" class="text-center text-gray-400">No users</td></tr></tbody></table></div></div>
+            <!-- Passwords -->
+            <div v-if="adminActiveTab==='passwords'" class="bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg p-6"><h2 class="text-xl font-bold mb-4"><i class="fas fa-key text-amber-600"></i> Credentials</h2><div class="bg-amber-50 border-l-4 border-amber-500 p-3 mb-4 text-sm">🔐 Admin only</div><div class="table-wrap"><table><thead class="bg-gray-800 text-white"><tr><th>#</th><th>Name</th><th>Mobile</th><th>Password</th><th>Plan</th><th>Balance</th></tr></thead><tbody><tr v-for="(u,i) in allUsersList" :key="u.id"><td>{{ i+1 }}</td><td>{{ u.fullName }}</td><td>{{ u.mobile }}</td><td><code class="bg-gray-100 px-2 py-1 rounded">{{ u.password }}</code></td><td>{{ u.activePlanName||'No Plan' }}</td><td>₨{{ u.balance }}</td></tr></tbody></table></div></div>
+            <!-- Withdrawals -->
+            <div v-if="adminActiveTab==='withdrawals'" class="bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg p-6"><h2 class="text-xl font-bold mb-4">Withdrawal Requests</h2><div v-for="wd in adminWithdrawals" :key="wd.id" class="border-b py-3 flex justify-between items-center"><div><p><b>{{ wd.fullName }}</b> ({{ wd.mobile }})<br>{{ wd.method }} • {{ wd.account }}<br>₨{{ wd.amount }}</p></div><button @click="markWithdrawComplete(wd.id)" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-2xl font-bold">✅ Processed</button></div><div v-if="adminWithdrawals.length===0" class="text-center py-10 text-gray-400">No pending withdrawals</div></div>
+        </div>
+    </div>
+
+    <!-- Admin Login Modal -->
+    <div v-if="showAdminLoginModal" class="fixed inset-0 modal-backdrop flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6"><h3 class="text-xl font-bold mb-4"><i class="fas fa-lock"></i> Admin Access</h3><input v-model="adminLoginPassword" type="password" placeholder="Secret Key" class="input-clean mb-4"><button @click="verifyAdminLogin" class="w-full bg-gray-800 hover:bg-gray-900 text-white py-3.5 rounded-2xl font-bold transition">Access Panel</button><button @click="showAdminLoginModal=false" class="mt-3 text-sm text-rose-500 w-full">Cancel</button></div>
+    </div>
+
+    <!-- Toast -->
+    <div v-if="toast.message" class="toast-notify" :class="toast.type==='error'?'bg-rose-700':'bg-gray-800'"><i class="fas fa-circle-info mr-2"></i>{{ toast.message }}</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/vue@2.7.14/dist/vue.js"></script>
+<script>
+    // ---------- API CONFIGURATION ----------
+    const API_URL = '/.netlify/functions/api';
+    const ADMIN_KEY = 'PkAdm!n@2025#Secure';
+
+    // helpers
+    function isValidPakistaniMobile(m) { return /^03[0-9]{9}$/.test(m); }
+
+    Vue.config.productionTip = false;
+    new Vue({
+        el: '#app',
+        data: {
+            isAdminMode: false,
+            showAdminLoginModal: false,
+            adminLoginPassword: '',
+            adminActiveTab: 'subscriptions',
+            isLoggedIn: false,
+            currentUser: null,
+            authMode: 'login',
+            loginMobile: '',
+            loginPassword: '',
+            signupFullName: '',
+            signupMobile: '',
+            signupPassword: '',
+            showDepositModal: false,
+            showPaymentDetails: false,
+            selectedPlanType: null,
+            withdrawMethod: 'easypaisa',
+            withdrawAccount: '',
+            withdrawAmount: 300,
+            toast: { message: '', type: '' },
+            pendingDepositsRaw: [],
+            loading: false,
+            adCooldown: 0,
+            authToken: localStorage.getItem('token') || null,
+            allUsers: []
+        },
+        computed: {
+            userBalance() { return this.currentUser ? this.currentUser.balance : 0; },
+            userActivePlan() { return this.currentUser?.activePlan || null; },
+            currentPerAdRate() { return this.userActivePlan ? this.userActivePlan.perAd : 0; },
+            userDailyAdsWatched() {
+                if(!this.currentUser) return 0;
+                let today = new Date().toDateString();
+                return this.currentUser.lastAdDate === today ? (this.currentUser.adsWatchedToday || 0) : 0;
+            },
+            canWatchAd() { return this.currentUser && this.currentUser.subscriptionActive && this.userDailyAdsWatched < 20 && this.adCooldown === 0; },
+            watchButtonText() {
+                if(!this.userActivePlan) return '🔒 Select a plan first';
+                if(this.userDailyAdsWatched >= 20) return '⏳ Daily limit reached';
+                if(this.adCooldown > 0) return `⏳ Wait ${Math.ceil(this.adCooldown/60)} min`;
+                return `📺 Watch Ad +₨${this.currentPerAdRate}`;
+            },
+            recentTransactions() { return this.currentUser?.transactions ? [...this.currentUser.transactions].reverse().slice(0,10) : []; },
+            adminPendingDeposits() {
+                return this.pendingDepositsRaw.filter(p => p.status === 'pending').map(req => ({ ...req, userData: this.allUsers.find(u => u.id === req.userId) }));
+            },
+            adminWithdrawals() { return []; }, // Will be fetched from API
+            allUsersList() { return this.allUsers; },
+            selectedPlanName() {
+                if(this.selectedPlanType === 'plan300') return '₨300 Plan';
+                if(this.selectedPlanType === 'plan500') return '₨500 Plan';
+                if(this.selectedPlanType === 'plan1000') return '₨1000 Plan';
+                return '';
+            },
+            selectedPlanAmount() {
+                if(this.selectedPlanType === 'plan300') return 300;
+                if(this.selectedPlanType === 'plan500') return 500;
+                return 1000;
+            }
+        },
+        methods: {
+            formatNumber(n) { return Number(n).toFixed(2); },
+            formatDate(d) { return new Date(d).toLocaleString(); },
+            showToast(msg, type) { this.toast = { message: msg, type: type }; setTimeout(() => { this.toast.message = ''; }, 3500); },
+            isValidPakistaniMobile,
+
+            async signupUser() {
+                if(!this.signupFullName || !isValidPakistaniMobile(this.signupMobile) || !this.signupPassword || this.signupPassword.length < 6) {
+                    return this.showToast('Invalid fields', 'error');
+                }
+                this.loading = true;
+                try {
+                    const res = await fetch(`${API_URL}/auth/signup`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ fullName: this.signupFullName, mobile: this.signupMobile, password: this.signupPassword })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error);
+                    this.authToken = data.token;
+                    localStorage.setItem('token', this.authToken);
+                    this.currentUser = data.user;
+                    this.isLoggedIn = true;
+                    this.showToast(`Welcome ${this.signupFullName}!`, 'success');
+                    this.signupFullName = this.signupMobile = this.signupPassword = '';
+                } catch (err) {
+                    this.showToast(err.message, 'error');
+                }
+                this.loading = false;
+            },
+
+            async loginUser() {
+                if(!this.loginMobile || !this.loginPassword) {
+                    return this.showToast('Please fill all fields', 'error');
+                }
+                this.loading = true;
+                try {
+                    const res = await fetch(`${API_URL}/auth/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ mobile: this.loginMobile, password: this.loginPassword })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error);
+                    this.authToken = data.token;
+                    localStorage.setItem('token', this.authToken);
+                    this.currentUser = data.user;
+                    this.isLoggedIn = true;
+                    this.showToast(`Welcome back ${data.user.fullName}!`, 'success');
+                    this.loginMobile = this.loginPassword = '';
+                } catch (err) {
+                    this.showToast(err.message, 'error');
+                }
+                this.loading = false;
+            },
+
+            async fetchUserData() {
+                if (!this.authToken) return;
+                try {
+                    const res = await fetch(`${API_URL}/user/me`, {
+                        headers: { 'Authorization': `Bearer ${this.authToken}` }
+                    });
+                    if (!res.ok) throw new Error('Session expired');
+                    const data = await res.json();
+                    this.currentUser = data;
+                } catch (err) {
+                    this.logoutUser();
+                }
+            },
+
+            logoutUser() {
+                this.isLoggedIn = false;
+                this.currentUser = null;
+                this.authToken = null;
+                localStorage.removeItem('token');
+                this.showToast('Logged out', 'info');
+            },
+
+            async watchAd() {
+                if(!this.canWatchAd) return this.showToast('Cannot watch ad', 'error');
+                this.loading = true;
+                try {
+                    const res = await fetch(`${API_URL}/user/watch`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${this.authToken}` }
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error);
+                    this.currentUser = data.user;
+                    this.showToast(`🎉 Earned ₨${data.earned}!`, 'success');
+                    this.adCooldown = 3600;
+                    const timer = setInterval(() => {
+                        this.adCooldown -= 1;
+                        if (this.adCooldown <= 0) { clearInterval(timer); this.adCooldown = 0; }
+                    }, 1000);
+                } catch (err) {
+                    this.showToast(err.message, 'error');
+                }
+                this.loading = false;
+            },
+
+            openDepositModal() {
+                if(this.currentUser.subscriptionActive) return this.showToast('You already have an active plan!', 'error');
+                this.showDepositModal = true;
+            },
+
+            selectPlanAndPay(plan) {
+                this.showDepositModal = false;
+                this.selectedPlanType = plan;
+                this.showPaymentDetails = true;
+            },
+
+            async submitPlanDeposit() {
+                if(!this.selectedPlanType) return;
+                this.loading = true;
+                try {
+                    const res = await fetch(`${API_URL}/deposit/request`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${this.authToken}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ plan: this.selectedPlanType })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error);
+                    this.showPaymentDetails = false;
+                    this.showToast('Deposit request sent! Admin will activate.', 'success');
+                } catch (err) {
+                    this.showToast(err.message, 'error');
+                }
+                this.loading = false;
+            },
+
+            async requestWithdraw() {
+                let amt = parseFloat(this.withdrawAmount);
+                if(amt < 300 || amt > this.userBalance || !this.withdrawAccount) {
+                    return this.showToast('Invalid withdrawal', 'error');
+                }
+                this.loading = true;
+                try {
+                    const res = await fetch(`${API_URL}/withdraw/request`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${this.authToken}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ method: this.withdrawMethod, account: this.withdrawAccount, amount: amt })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error);
+                    this.showWithdrawModal = false;
+                    this.showToast(`Withdrawal of ₨${amt} submitted`, 'success');
+                    await this.fetchUserData();
+                } catch (err) {
+                    this.showToast(err.message, 'error');
+                }
+                this.loading = false;
+            },
+
+            // Admin methods
+            async loadAdminData() {
+                if (!this.authToken) return;
+                try {
+                    const res = await fetch(`${API_URL}/admin/users`, {
+                        headers: { 'Authorization': `Bearer ${this.authToken}` }
+                    });
+                    if (res.ok) {
+                        this.allUsers = await res.json();
+                    }
+                    const pendingRes = await fetch(`${API_URL}/admin/pending`, {
+                        headers: { 'Authorization': `Bearer ${this.authToken}` }
+                    });
+                    if (pendingRes.ok) {
+                        this.pendingDepositsRaw = await pendingRes.json();
+                    }
+                } catch (err) {
+                    console.error(err);
+                }
+            },
+
+            async adminConfirmPlan(userId, planKey) {
+                this.loading = true;
+                try {
+                    const res = await fetch(`${API_URL}/admin/activate`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${this.authToken}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId, planKey })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error);
+                    this.showToast('Plan activated successfully!', 'success');
+                    await this.loadAdminData();
+                    if (this.currentUser && this.currentUser.id === userId) {
+                        await this.fetchUserData();
+                    }
+                } catch (err) {
+                    this.showToast(err.message, 'error');
+                }
+                this.loading = false;
+            },
+
+            usersByPlan(planId) {
+                return this.allUsers.filter(u => u.activePlan && u.activePlan.planId === planId && u.subscriptionActive);
+            },
+
+            async markWithdrawComplete(wid) {
+                this.loading = true;
+                try {
+                    const res = await fetch(`${API_URL}/admin/withdraw/process`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${this.authToken}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ withdrawalId: wid })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error);
+                    this.showToast('Withdrawal processed', 'success');
+                    await this.loadAdminData();
+                } catch (err) {
+                    this.showToast(err.message, 'error');
+                }
+                this.loading = false;
+            },
+
+            verifyAdminLogin() {
+                if(this.adminLoginPassword === ADMIN_KEY) {
+                    this.isAdminMode = true;
+                    this.showAdminLoginModal = false;
+                    this.loadAdminData();
+                } else {
+                    this.showToast('Invalid admin key', 'error');
+                }
+            },
+
+            logoutAdmin() { this.isAdminMode = false; }
+        },
+        mounted() {
+            const token = localStorage.getItem('token');
+            if (token) {
+                this.authToken = token;
+                this.fetchUserData().then(() => {
+                    if (this.currentUser) {
+                        this.isLoggedIn = true;
+                    }
+                });
+            }
+            // Auto-refresh admin data
+            setInterval(() => {
+                if (this.isAdminMode) this.loadAdminData();
+            }, 10000);
+        }
+    });
+</script>
+</body>
+</html>
